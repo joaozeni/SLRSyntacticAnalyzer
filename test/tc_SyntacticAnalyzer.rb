@@ -119,4 +119,26 @@ C -> cC | &"
 		first = lex.first
 		assert( first == test , "first Test1")
 	end
+=begin
+Gram               | FOLLOW
+S -> Ab | ABc      | $
+B -> bB | Ad | &   | c
+A -> aA | &        | a, b, c, d
+
+=end
+	def test_follow1
+		gram = "S -> Ab | ABc
+B -> bB | Ad | &
+A -> aA | &"
+		lex = SyntacticAnalyzer.new(gram)
+		test = Hash.new
+		test["S"] = Set.new
+		test["S"] << "$"
+		test["B"] = Set.new
+		test["B"] << "c"
+		test["A"] = Set.new
+		test["A"] << "a" << "b" << "c" << "d"
+		follow = lex.follow
+		assert( follow == test , "follow Test1")
+	end
 end

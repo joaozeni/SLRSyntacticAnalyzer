@@ -5,8 +5,10 @@ class SyntacticAnalyzer
 		@gramat = gram
 		@parsed = parse(gram)
 		@initial = gram[0]
+		@first = self.first
 	end
 	attr_accessor :parsed
+	attr_accessor :first
 
 	def parse(text)
 		parsed = Hash.new
@@ -66,12 +68,61 @@ class SyntacticAnalyzer
 		end
 		return first
 	end
+
+	def follow
+		follow = Hash.new
+		@parsed.each_pair do |name, val|
+			follow[name] = Set.new
+			if name == @initial
+				follow[name] << "$"
+			end
+		end
+		atual = Hash.new
+		while follow != atual
+			atual = deep_copy(follow)
+			@parsed.each_pair do |name, val|
+				val.each do |x|
+					count = x.size - 1
+					while count >= 1
+						if x[count] != x[count].downcase
+							if x[count - 1] != x[count - 1].downcase
+								@first[x[count]].each { |e| if e != "&"; follow[x[count - 1]] << e; end }
+							end
+							#Those 2 are work in progress
+							if count == x.size - 1 or behindNil(count, x)
+								follow[name].each { |e| follow[x[count]] << e }
+							end
+							if count != x.size - 1 and @first[x[count]].include?("&")
+								follow[name].each { |e| follow[x[count]] << e }
+							end
+						elsif x[count] == x[count].downcase and x[count - 1] != x[count - 1].downcase
+							follow[x[count - 1]] << x[count]
+						end
+						count = count - 1
+					end
+				end
+			end
+		end
+		return follow
+	end
+
+	#Work in progress too
+	def behindNil(pos, var)
+		pos = pos + 1
+		while pos < var.size
+			if var[pos] == var[pos].downcase or not @first[var[pos]].include?("&")
+				return false
+			end
+			pos = pos + 1
+		end
+		return true
+	end
 end
 
-# gram = "S -> ABC
-# A -> aA
-# B -> bB | ACd
-# C -> cC | &"
-# lex = SyntacticAnalyzer.new(gram)
-# first = lex.first
-# puts first.inspect
+gram = "S -> ABC
+A -> aA
+B -> bB | ACd
+C -> cC | &"
+lex = SyntacticAnalyzer.new(gram)
+first = lex.follow
+puts first.inspect
