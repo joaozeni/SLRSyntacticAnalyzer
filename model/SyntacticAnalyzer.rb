@@ -82,23 +82,32 @@ class SyntacticAnalyzer
 			atual = deep_copy(follow)
 			@parsed.each_pair do |name, val|
 				val.each do |x|
-					count = x.size - 1
-					while count >= 1
-						if x[count] != x[count].downcase
-							if x[count - 1] != x[count - 1].downcase
-								@first[x[count]].each { |e| if e != "&"; follow[x[count - 1]] << e; end }
+					count = 0
+					while count < x.size - 1
+						if ((x[count+1] == x[count+1].downcase) and (x[count] != x[count].downcase))
+							follow[x[count]] << x[count+1]
+						elsif x[count+1] != x[count+1].downcase and x[count] != x[count].downcase
+							@first[x[count+1]].each { |e| if e != "&"; follow[x[count]] << e; end }
+							#------------------------------------------------------------------------------
+							#Don't know if this is needed
+							y = count + 1
+							while y < x.size - 1 and x[y] != x[y].downcase and first[x[y]].include?("&")
+								if x[y+1] != x[y+1].downcase
+									@first[x[y+1]].each { |e| if e != "&"; follow[x[count]] << e; end }
+								elsif x[y+1] == x[y+1].downcase
+									follow[x[count]] << x[y+1]
+								end
+								y = y + 1
 							end
-							#Those 2 are work in progress
-							if count == x.size - 1 or behindNil(count, x)
-								follow[name].each { |e| follow[x[count]] << e }
-							end
-							if count != x.size - 1 and @first[x[count]].include?("&")
-								follow[name].each { |e| follow[x[count]] << e }
-							end
-						elsif x[count] == x[count].downcase and x[count - 1] != x[count - 1].downcase
-							follow[x[count - 1]] << x[count]
+							#------------------------------------------------------------------------------
 						end
-						count = count - 1
+						if behindNil(count, x) and x[count] != x[count].downcase
+							follow[name].each { |e| follow[x[count]] << e }
+						end
+						count = count + 1
+					end
+					if count == x.size - 1 and x[count] != x[count].downcase
+						follow[name].each { |e| follow[x[count]] << e }
 					end
 				end
 			end
@@ -106,7 +115,6 @@ class SyntacticAnalyzer
 		return follow
 	end
 
-	#Work in progress too
 	def behindNil(pos, var)
 		pos = pos + 1
 		while pos < var.size
