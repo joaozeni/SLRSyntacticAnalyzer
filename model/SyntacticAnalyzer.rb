@@ -6,9 +6,11 @@ class SyntacticAnalyzer
 		@parsed = parse(gram)
 		@initial = gram[0]
 		@first = self.first
+		@marked = marker(gram)
 	end
 	attr_accessor :parsed
 	attr_accessor :first
+	attr_accessor :marked
 
 	def parse(text)
 		parsed = Hash.new
@@ -125,12 +127,51 @@ class SyntacticAnalyzer
 		end
 		return true
 	end
+
+	def marker(gramar)
+		marked = Set.new
+		gramar.each_line do |line|
+			x = line.split("->")
+			startSymbol = x[0].gsub(" ","")
+			y = x[1].split("|")
+			y.each do |transition|
+				t = transition.gsub(" ","").gsub("\n","")
+				(t.size + 1).times do |position|
+					doted = t.dup
+					doted.insert(position, ".")
+					if t == "&"
+						marked << "#{startSymbol} -> ."
+					else
+						marked << "#{startSymbol} -> #{doted}"
+					end
+				end
+			end
+		end
+		return marked
+	end
+
+	def closure(i)
+		itemSet = Set.new
+		itemSet << i
+		control = Set.new
+		while itemSet != control
+			control = deep_copy(itemSet)
+			puts control.inspect
+			control.each do |transition|
+				element = transition.split(".")[1][0]
+				if element != element.downcase
+					addSet = @marked.to_a.select { |e| e =~ /^(#{element} -> \.).*/ }
+					addSet.each { |e| itemSet << e }
+				end
+			end
+		end
+		return itemSet
+	end
 end
 
-gram = "S -> ABC
-A -> aA
-B -> bB | ACd
-C -> cC | &"
+gram = "S -> E
+E -> E+T | T
+T -> T*F | F
+F -> (E) | i"
 lex = SyntacticAnalyzer.new(gram)
-first = lex.follow
-puts first.inspect
+puts lex.closure("S -> .E").inspect
