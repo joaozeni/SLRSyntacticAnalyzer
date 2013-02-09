@@ -1,0 +1,2 @@
+require 'SLR'
+run SLR
