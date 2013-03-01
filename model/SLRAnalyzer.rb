@@ -1,56 +1,83 @@
 class SLRAnalyzer
-	def self.analyze(input, table, numGram)
-		input = input.split(" ")
-		a = input[0]
+	def self.analyzeWithHistory(input, table, numGram)
+		inputArr = input.split(" ")
+		stackHistory = String.new
+		wordHistory = String.new
+		a = inputArr[0]
 		count = 0
 		stack = Array.new
 		stack.push 0
+		stackHistory << "#{stack}\n"
+		wordHistory << "#{input}\n"
 		error = false
 		while true
 			s = stack[stack.size - 1]
-			element = table[[a,s]]
+			element = table["#{a}#{s}"]
 			if element == nil
 				error = true
-			elsif element[0] == "S"
-				stack.push element[1..element.size-1].to_i
+			elsif element[0][0] == "S"
+				stack.push element[0][1..element[0].size-1].to_i
 				if a.downcase == a
 					count = count + 1
-					a = input[count]
+					a = inputArr[count]
 				elsif a.downcase != a
-					a = input[count]
+					a = inputArr[count]
 				end
-			elsif element[0] == "R"
-				x = getProd(element[1..element.size-1].to_i, numGram)
+				word = String.new
+				inputArr[count..input.size-1].each { |e| word << "#{e} " }
+				wordHistory << "#{word}\n"
+			elsif element[0][0] == "R"
+				x = getProd(element[0][1..element[0].size-1].to_i, numGram)
 				a = x[0]
 				prod = x[1].split(" ")
-				prod.size.times{stack.pop}
+				if prod[0] != "&"
+					prod.size.times{stack.pop}
+				end
+				word = String.new
+				inputArr[count..input.size-1].each { |e| word << "#{e} " }
+				wordHistory << "#{a} #{word}\n"
 			end
-			break if error or element == "Halt"
+			break if error or element[0] == "Halt"
+			stackHistory << "#{stack}\n"
 		end
-		return error
+		return error, stackHistory, wordHistory
 	end
 
-	def self.analyzeBySteps(input, table, numGram, stack, a, count)
+	# def self.analyze(input, table, numGram)
+	# 	return analyzeWithHistory(input, table, numGram)[0]
+	# end
+
+	def self.analyzeBySteps(input, table, numGram, stack, a, count, wordHistory, stackHistory)
+		inputArr = input.split(" ")
 		error = false
 		s = stack[stack.size - 1]
-		element = table[[a,s]]
+		element = table["#{a}#{s}"]
 		if element == nil
 			error = true
-		elsif element[0] == "S"
-			stack.push element[1..element.size-1].to_i
+		elsif element[0][0] == "S"
+			stack.push element[0][1..element[0].size-1].to_i
 			if a.downcase == a
 				count = count + 1
-				a = input[count]
+				a = inputArr[count]
 			elsif a.downcase != a
-				a = input[count]
+				a = inputArr[count]
 			end
-		elsif element[0] == "R"
-			x = getProd(element[1..element.size-1].to_i, numGram)
+			word = String.new
+			inputArr[count..input.size-1].each { |e| word << "#{e} " }
+			wordHistory << "#{word}\n"
+		elsif element[0][0] == "R"
+			x = getProd(element[0][1..element[0].size-1].to_i, numGram)
 			a = x[0]
 			prod = x[1].split(" ")
-			prod.size.times{stack.pop}
+			if prod[0] != "&"
+				prod.size.times{stack.pop}
+			end
+			word = String.new
+			inputArr[count..input.size-1].each { |e| word << "#{e} " }
+			wordHistory << "#{a} #{word}\n"
 		end
-		return input, table, numGram, stack, a, count
+		stackHistory << "#{stack}\n"
+		return error, table, numGram, stack, a, count, wordHistory, stackHistory
 	end
 
 	def self.getProd(num, numGram)

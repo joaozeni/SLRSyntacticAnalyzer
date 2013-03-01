@@ -46,23 +46,20 @@
             %a.btn.btn-primary{:href => "/#{@gram.struct_id}/LLAnalyzer"} LL(1)
         .hero-unit
           .row-fluid
-            %table.table-condensed.table.table-bordered
-              %thead
-                %tr
-                  %th
-                    Simbolo
-                  %th
-                    First
-                  %th
-                    Follow
-              %tbody
-                -@ff.each do |key, value|
-                  %tr
-                    %th
-                      = key
-                    %th
-                      = "#{value[0]}"
-                    %th
-                      = "#{value[1]}"
+            .span6
+              %form{:action => "/#{@gram.struct_id}/SLRAnalyzerWordTipeSelect", :method => "post"}
+                %fieldset
+                  %input.input-medium{:type => "text", :placeholder => "Palavra", :name => "palavra"}/
+                  %span.help-block Insira a Palavra que deseja analizar.
+                  %button.btn{:type => "submit", :name => "mode", :value => "complete"} Completo
+                  %button.btn{:type => "submit", :name => "mode", :value => "stepByStep"} Passo-A-Passo
+            .span6
+              %table.table-condensed.table.table-bordered
+                %tbody
+                  -@gram.table.each do |line|
+                    %tr
+                      -line.each do |element|
+                        %th
+                          = element
       %footer
         %p &copy; OpenSource

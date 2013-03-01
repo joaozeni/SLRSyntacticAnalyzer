@@ -18,6 +18,9 @@ class SyntacticAnalyzerStructConstructor
 		@itemSet = y[0]
 		@switch = y[1]
 		@lexTable = tableMaker(@symbols,@switch,@itemSet,@followSet,@numGram)
+		# @fatorada = fatorada?(@parsed1, @firstSet)
+		# @cond3 = cond3?(@parsed1, @firstSet, @followSet)
+		# @leftRecurtion = leftRecurtion?(@parsed1, @firstSet)
 	end
 	attr_accessor :parsed1
 	attr_accessor :parsed
@@ -30,6 +33,9 @@ class SyntacticAnalyzerStructConstructor
 	attr_accessor :switch
 	attr_accessor :numGram
 	attr_accessor :lexTable
+	attr_accessor :fatorada
+	attr_accessor :cond3
+	# attr_accessor :leftRecurtion
 
 	def parseAndSymbols(text)
 		parsed = Hash.new
@@ -37,7 +43,7 @@ class SyntacticAnalyzerStructConstructor
 		symbols = Set.new
 		text.each_line do |line|
 			x = line.split("->")
-			w = x[0].gsub(" ","")
+			w = x[0].gsub(" ","").gsub("\r","")
 			symbols << w
 			parsed[w] = Set.new
 			parsed1[w] = Set.new
@@ -45,13 +51,15 @@ class SyntacticAnalyzerStructConstructor
 			y = x[1].split("|")
 			y.each do |prod|
 				if ((prod[0] == " ") and (prod[prod.size - 1] == " "))
-					parsed1[w] << prod.gsub("\n","")[1..(prod.size-2)]
+					parsed1[w] << prod.gsub("\n","")[1..(prod.size-2)].gsub("\r","")
 				elsif (prod[0] == " ")
-					parsed1[w] << prod.gsub("\n","")[1..(prod.size-1)]
+					parsed1[w] << prod.gsub("\n","")[1..(prod.size-1)].gsub("\r","")
 				elsif (prod[prod.size - 1] == " ")
-					parsed1[w] << prod.gsub("\n","")[0..(prod.size-2)]
+					parsed1[w] << prod.gsub("\n","")[0..(prod.size-2)].gsub("\r","")
 				elsif (prod[prod.size - 1] == "\n")
-					parsed1[w] << prod.gsub("\n","")
+					parsed1[w] << prod.gsub("\n","").gsub("\r","")
+				else
+					parsed1[w] << prod.gsub("\r","")
 				end
 				parsed[w] << prod.gsub(" ","").gsub("\n","")
 				z = prod.split(" ")
@@ -181,6 +189,7 @@ class SyntacticAnalyzerStructConstructor
 	end
 
 	def tableMaker(symbols, switch, itemSet, follow, numGram)
+		# puts "#{numGram}"
 		header = symbols.to_a
 		header << "$"
 		sider = itemSet.keys
@@ -188,7 +197,12 @@ class SyntacticAnalyzerStructConstructor
 		header.each do |i|
 			sider.each do |j|
 				if switch[j].has_key?(i)
-					table[[i,j]] = "S#{switch[j][i]}"
+					if table[[i,j]] == nil
+						table[[i,j]] = Array.new
+						table[[i,j]] << "S#{switch[j][i]}"
+					else
+						table[[i,j]] << "S#{switch[j][i]}"
+					end
 				end
 			end
 		end
@@ -199,10 +213,19 @@ class SyntacticAnalyzerStructConstructor
 					head = x[0].gsub(" ","")
 					e = x[1][1..x[1].size-3]
 					follow[head].each do |val|
-						table[[val,num]] = "R#{numGram[head][e]}"
+						if e == "."
+							e = "&"
+						end
+						if table[[val,num]] == nil
+							table[[val,num]] = Array.new
+							table[[val,num]] << "R#{numGram[head][e]}"
+						else
+							table[[val,num]] << "R#{numGram[head][e]}"
+						end
 					end
 				elsif doted == "#{@initial}' -> #{@initial} . $"
-					table[["$",num]] = "Halt"
+					table[["$",num]] = Array.new
+					table[["$",num]] << "Halt"
 				end
 			end
 		end
@@ -308,11 +331,89 @@ class SyntacticAnalyzerStructConstructor
 		end
 		return converted
 	end
+
+	def fatorada?(parsedGramar, first)
+		error = false
+		parsedGramar.each do |key, val|
+			firsts = Set.new
+			val.each do |prod|
+				prod.split(" ").each do |element|
+					if element == element.downcase
+						if firsts.include?(element)
+							error = true
+						else
+							firsts << element
+						end
+					else
+						first[element].each do |fir|
+							if firsts.include?(fir)
+								error = true
+							else
+								if fir != "&"
+									firsts << fir
+								end
+							end
+						end
+					end
+					break if element == element.downcase or not first[element].include?("&")
+				end
+				break if error
+			end
+			break if error
+		end
+		return (not error)
+	end
+
+	def cond3?(parsedGramar, first, follow)
+		error = false
+		parsedGramar.each do |key, val|
+			if first[key].include?("&")
+				if not (first[key] & follow[key]).empty?
+					error = true
+				end
+			end
+			break if error
+		end
+		return (not error)
+	end
+
+	def leftRecurtion?(parsedGramar, first)
+		error = false
+		copy = parsedGramar.dup
+		productions = Hash.new
+		parsedGramar.each do |key, val|
+			productions[key] = Set.new
+			val.each do |prod|
+				x = prod.split(" ")
+				count = 0
+				while (x[count] != x[count].downcase)
+					productions[key] << x[count]
+					break if not first[x[count]].include?("&")
+					count = count + 1
+				end
+			end
+		end
+		productions.each do |key, val|
+			val.each do |gen|
+				if productions[gen].include?(key)
+					error = true
+				end
+				break if error
+			end
+			break if error
+		end
+		return error
+	end
 end
 
 # gram = "E -> E + T | T
 # T -> T * F | F
 # F -> ( E ) | id"
+# gram = "S -> L = R | R
+# L -> * R | id
+# R -> L"
+# gram = "S -> c S c | B c
+# B -> a B | B b | &"
 # lex = SyntacticAnalyzerStructConstructor.new(gram)
 # puts lex.parsed1.inspect
 # puts lex.firstSet.inspect
@@ -327,3 +428,6 @@ end
 # puts lex.setHashConverter(lex.itemSet)
 # puts lex.lexTable.table
 # puts lex.lexTable.to_a.inspect
+# puts lex.fatorada
+# puts lex.leftRecurtion
+# puts SLRAnalyzer.analyzeWithHistory("id + id $", lex.lexTable.table, lex.numGram)

@@ -46,23 +46,29 @@
             %a.btn.btn-primary{:href => "/#{@gram.struct_id}/LLAnalyzer"} LL(1)
         .hero-unit
           .row-fluid
-            %table.table-condensed.table.table-bordered
-              %thead
-                %tr
-                  %th
-                    Simbolo
-                  %th
-                    First
-                  %th
-                    Follow
-              %tbody
-                -@ff.each do |key, value|
-                  %tr
-                    %th
-                      = key
-                    %th
-                      = "#{value[0]}"
-                    %th
-                      = "#{value[1]}"
+            .span6
+              .row-fluid
+                .span6
+                  -@stackHistory.each_line do |line|
+                    %p= "#{line}"
+                .span6
+                  -@wordHistory.each_line do |line|
+                    %p= "#{line}"
+              .row-fluid
+                %p= "#{@statement}"
+              .row-fluid
+                %a.btn.btn-primary{:href => "/#{@gram.struct_id}/SLRAnalyzerWordStepByStepNext?palavra=#{CGI.escape(params[:palavra])}&stack=#{CGI.escape(@analyze[3].to_s)}&a=#{CGI.escape(@analyze[4])}&count=#{CGI.escape(@analyze[5].to_s)}&wordHistory=#{CGI.escape(@analyze[6])}&stackHistory=#{CGI.escape(@analyze[7])}"} Next
+            .span6
+              %table.table-condensed.table.table-bordered
+                %tbody
+                  -@gram.table.each do |line|
+                    %tr
+                      -line.each do |element|
+                        -if element == @el
+                          %th.green
+                            = element
+                        -else
+                          %th
+                            = element
       %footer
         %p &copy; OpenSource

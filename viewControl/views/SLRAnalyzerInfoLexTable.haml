@@ -34,15 +34,24 @@
     .container
       .content
         .row-fluid
-          .hero-unit
-            .row-fluid
-              -@gram.gramat.each_line do |line|
-                %p="#{line}"
-            .row-fluid
-              %a.btn.btn-primary{:href => "/#{@gram.struct_id}/SLRStructInfoFirstFollow"} First+Follow
-              %a.btn.btn-primary{:href => "/#{@gram.struct_id}/SLRStructInfoItenLR"} Itens LR(0)
-              %a.btn.btn-primary{:href => "/#{@gram.struct_id}/SLRStructInfoLexTable"} Tabela SLR
-              %a.btn.btn-primary{:href => "/#{@gram.struct_id}/SLRAnalyzerWordInput"} Analizador SLR
-              %a.btn.btn-primary{:href => "/#{@gram.struct_id}/LLAnalyzer"} LL(1)
+        .hero-unit
+          .row-fluid
+            -@gram.gramat.each_line do |line|
+              %p="#{line}"
+          .row-fluid
+            %a.btn.btn-primary{:href => "/#{@gram.struct_id}/SLRStructInfoFirstFollow"} First+Follow
+            %a.btn.btn-primary{:href => "/#{@gram.struct_id}/SLRStructInfoItenLR"} Itens LR(0)
+            %a.btn.btn-primary{:href => "/#{@gram.struct_id}/SLRStructInfoLexTable"} Tabela SLR
+            %a.btn.btn-primary{:href => "/#{@gram.struct_id}/SLRAnalyzerWordInput"} Analizador SLR
+            %a.btn.btn-primary{:href => "/#{@gram.struct_id}/LLAnalyzer"} LL(1)
+        .hero-unit
+          .row-fluid
+            %table.table-condensed.table.table-bordered
+              %tbody
+                -@gram.table.each do |line|
+                  %tr
+                    -line.each do |element|
+                      %th
+                        = element
       %footer
         %p &copy; OpenSource
